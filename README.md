@@ -21,3 +21,17 @@ Dalam tahap ini, saya memfokuskan pengerjaan pada fungsi `handle_connection` unt
 
 6. `collect`
 - Terakhir, `.collect()` mengumpulkan semua baris teks yang sudah difilter tadi ke dalam sebuah struktur data `Vec<_>` (Vector) agar bisa diproses lebih lanjut atau dicetak untuk keperluan debugging.
+
+## Commit 2 Reflection Notes
+Pada commit ini, saya memodifikasi fungsi `handle_connection` agar tidak hanya membaca *request*, tetapi juga memberikan *response* balik ke browser dalam bentuk file HTML. Berikut adalah detail perubahannya:
+
+### Mekanisme Pengiriman Response
+* **`fs::read_to_string("hello.html")`**: Fungsi ini digunakan untuk membaca isi file `hello.html` dan mengubahnya menjadi tipe data `String`. File ini harus berada di root direktori proyek agar dapat terbaca oleh program.
+* **Format HTTP Response**: Respons yang dikirimkan harus mengikuti standar protokol HTTP. Saya menyusunnya menggunakan makro `format!` dengan struktur:
+    - **Status Line**: `HTTP/1.1 200 OK` (Menandakan permintaan berhasil).
+    - **Headers**: `Content-Length: {length}` (Memberitahu browser berapa besar data yang dikirim agar browser tahu kapan harus berhenti membaca).
+    - **Body**: Isi dari file `hello.html`.
+* **`stream.write_all()`**: Fungsi ini mengirimkan seluruh string respons yang telah diformat dalam bentuk byte (`as_bytes()`) ke klien melalui koneksi TCP.
+
+### Bukti Tampilan Browser
+![Commit 2 screen capture](./assets/images/commit2.png)
