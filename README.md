@@ -55,3 +55,21 @@ Dengan refactoring ini:
 
 ### Bukti Tampilan Error 404
 ![Commit 3 screen capture](./assets/images/commit3.png)
+
+## Commit 4 Reflection Notes
+
+Pada Milestone 4, saya mensimulasikan kondisi *slow response* dengan menambahkan rute `/sleep`. Simulasi ini membuka wawasan mengenai keterbatasan server yang berjalan pada satu thread tunggal (*single-threaded*).
+
+### 1. Bagaimana Simulasinya Bekerja?
+Saya menggunakan `thread::sleep(Duration::from_secs(10))` pada rute `/sleep`. Ketika rute ini diakses, server akan sengaja berhenti beroperasi selama 10 detik sebelum mengirimkan respons HTML. 
+
+### 2. Mengapa Hal Ini Terjadi?
+Server yang saya bangun saat ini bersifat **Synchronous** dan **Single-threaded**. Artinya:
+* Server hanya bisa memproses satu request pada satu waktu.
+* Ketika rute `/sleep` dipanggil, thread utama server akan "tertahan" (blocked) oleh fungsi `sleep` tersebut.
+* Selama masa tunggu 10 detik itu, server tidak dapat menerima atau memproses koneksi baru lainnya.
+
+### 3. Dampak pada User Lain
+Jika satu user mengakses `/sleep`, user lain yang mencoba mengakses halaman utama (`/`) akan ikut mengalami keterlambatan (*loading* lama) meskipun permintaan mereka seharusnya bisa diproses secara instan. User kedua baru akan dilayani setelah proses 10 detik pada user pertama selesai.
+
+Hal ini membuktikan bahwa penambahan jumlah core CPU atau peningkatan kecepatan hardware tidak akan membantu jika arsitektur program masih bersifat *single-threaded blocking*. Solusi untuk masalah ini adalah dengan menerapkan **Concurrency** (seperti menggunakan Thread Pool).
