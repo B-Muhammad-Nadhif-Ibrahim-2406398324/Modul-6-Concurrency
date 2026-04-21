@@ -84,8 +84,6 @@ Dibandingkan dengan membuat thread baru untuk setiap request (yang bisa membeban
 * **Channel (MPSC)**: Saya menggunakan `std::sync::mpsc` (Multiple Producer, Single Consumer) untuk mengirim tugas dari thread utama ke thread pekerja.
 * **Synchronization**: Menggunakan `Arc<Mutex<mpsc::Receiver<Job>>>` agar antrean tugas dapat diakses secara aman oleh banyak thread sekaligus tanpa menyebabkan *data race*.
 
-
-
 ### 2. Mengapa Menggunakan ThreadPool?
 Penggunaan Thread Pool jauh lebih aman dan efisien daripada melakukan `thread::spawn` secara langsung untuk setiap koneksi:
 * **Mencegah DOS (Denial of Service)**: Dengan membatasi jumlah thread (misal: 4), server tidak akan tumbang atau kehabisan memori jika tiba-tiba menerima ribuan request sekaligus.
@@ -93,3 +91,18 @@ Penggunaan Thread Pool jauh lebih aman dan efisien daripada melakukan `thread::s
 
 ### 3. Hasil Pengujian
 Setelah implementasi ini, server mampu menangani rute `/sleep` (yang memakan waktu 10 detik) tanpa mengganggu pengguna lain yang mengakses halaman utama (`/`). Hal ini membuktikan bahwa server sekarang memiliki kemampuan **Concurrency** yang baik.
+
+## Commit Bonus Reflection Notes
+Pada bagian bonus ini, saya mengimplementasikan fungsi `build` sebagai alternatif dari fungsi `new` untuk menginisialisasi `ThreadPool`.
+
+### Perbandingan antara `new` dan `build`:
+1. **Fungsi `new`**: 
+- Menggunakan `assert!(size > 0)` yang bersifat destruktif. Jika parameter `size` bernilai 0, program akan langsung mengalami *panic* dan berhenti seketika.
+- Biasanya digunakan ketika kita sangat yakin bahwa input pasti valid.
+
+2. **Fungsi `build`**:
+- Lebih aman karena mengembalikan tipe data `Result<ThreadPool, &'static str>`. 
+- Jika `size` bernilai 0, fungsi ini mengembalikan `Err` daripada mematikan seluruh program. Hal ini memberikan kesempatan bagi pemanggil fungsi (di `main.rs`) untuk menangani error tersebut dengan lebih elegan (misalnya memberikan pesan error yang ramah kepada user atau menggunakan nilai default).
+
+### Kesimpulan Refactoring:
+Dengan menggunakan `build`, kode menjadi lebih sesuai dengan filosofi Rust yang mengutamakan keamanan dan penanganan error yang eksplisit (*robust error handling*). Saya juga melakukan refactoring pada fungsi `new` agar memanggil fungsi `build`, sehingga tidak terjadi duplikasi logika di dalam library.
