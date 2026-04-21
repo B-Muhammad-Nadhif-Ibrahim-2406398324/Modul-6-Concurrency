@@ -35,3 +35,23 @@ Pada commit ini, saya memodifikasi fungsi `handle_connection` agar tidak hanya m
 
 ### Bukti Tampilan Browser
 ![Commit 2 screen capture](./assets/images/commit2.png)
+
+## Commit 3 Reflection Notes
+
+Pada Milestone 3 ini, saya melakukan refactoring pada fungsi `handle_connection` agar server dapat memvalidasi request dan memberikan respons yang berbeda tergantung pada path yang diminta oleh klien.
+
+### 1. Mekanisme Pemisahan Respons (Split Response)
+Untuk membedakan respons, saya mengambil baris pertama dari HTTP request (`request_line`) yang berisi informasi metode dan path (contoh: `GET / HTTP/1.1`). 
+* Jika `request_line` sama dengan `GET / HTTP/1.1`, variabel `status_line` diatur ke `200 OK` dan `filename` ke `hello.html`.
+* Jika `request_line` berisi hal lain (misalnya user mengakses `/bad`), variabel `status_line` diatur ke `404 NOT FOUND` dan `filename` ke `404.html`.
+
+### 2. Pentingnya Refactoring
+Refactoring dilakukan untuk menerapkan prinsip **DRY (Don't Repeat Yourself)**. Dalam implementasi sebelumnya, jika saya menggunakan blok `if-else` yang besar untuk setiap kondisi, maka kode untuk membaca file (`fs::read_to_string`) dan mengirimkan respons (`stream.write_all`) akan tertulis dua kali. 
+
+Dengan refactoring ini:
+* **Efisiensi Kode**: Kode hanya melakukan proses pembacaan file dan pengiriman respons satu kali di bagian akhir fungsi.
+* **Maintainability**: Jika di masa depan saya perlu mengubah struktur header HTTP, saya hanya perlu mengubahnya di satu tempat, bukan di setiap cabang `if-else`.
+* **Keterbacaan**: Alur logika menjadi lebih bersih karena kita hanya menentukan "apa yang akan dikirim" di awal, lalu "bagaimana cara mengirimnya" dieksekusi secara terpusat di akhir.
+
+### Bukti Tampilan Error 404
+![Commit 3 screen capture](./assets/images/commit3.png)

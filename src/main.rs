@@ -21,8 +21,20 @@ fn handle_connection(mut stream: TcpStream) {
         .take_while(|line| !line.is_empty())
         .collect();
 
-    let status_line = "HTTP/1.1 200 OK";
-    let contents = fs::read_to_string("hello.html").unwrap();
+    let request_line = &http_request[0]; 
+
+    let status_line;
+    let filename;
+
+    if request_line == "GET / HTTP/1.1" {
+        status_line = "HTTP/1.1 200 OK";
+        filename = "hello.html";
+    } else {
+        status_line = "HTTP/1.1 404 NOT FOUND";
+        filename = "404.html";
+    }
+
+    let contents = fs::read_to_string(filename).unwrap();
     let length = contents.len();
 
     let response =
