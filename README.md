@@ -73,3 +73,23 @@ Server yang saya bangun saat ini bersifat **Synchronous** dan **Single-threaded*
 Jika satu user mengakses `/sleep`, user lain yang mencoba mengakses halaman utama (`/`) akan ikut mengalami keterlambatan (*loading* lama) meskipun permintaan mereka seharusnya bisa diproses secara instan. User kedua baru akan dilayani setelah proses 10 detik pada user pertama selesai.
 
 Hal ini membuktikan bahwa penambahan jumlah core CPU atau peningkatan kecepatan hardware tidak akan membantu jika arsitektur program masih bersifat *single-threaded blocking*. Solusi untuk masalah ini adalah dengan menerapkan **Concurrency** (seperti menggunakan Thread Pool).
+
+## Commit 5 Reflection Notes
+
+Pada Milestone 5, saya telah berhasil mengubah arsitektur server menjadi **Multithreaded** menggunakan konsep **Thread Pool**. Ini adalah solusi untuk masalah *blocking* yang ditemukan pada Milestone sebelumnya.
+
+### 1. Cara Kerja ThreadPool
+Dibandingkan dengan membuat thread baru untuk setiap request (yang bisa membebani resource sistem), saya mengimplementasikan `ThreadPool` dengan mekanisme sebagai berikut:
+* **Pre-allocated Threads**: Server membuat sejumlah thread "pekerja" (*Worker*) di awal (dalam hal ini 4 thread).
+* **Channel (MPSC)**: Saya menggunakan `std::sync::mpsc` (Multiple Producer, Single Consumer) untuk mengirim tugas dari thread utama ke thread pekerja.
+* **Synchronization**: Menggunakan `Arc<Mutex<mpsc::Receiver<Job>>>` agar antrean tugas dapat diakses secara aman oleh banyak thread sekaligus tanpa menyebabkan *data race*.
+
+
+
+### 2. Mengapa Menggunakan ThreadPool?
+Penggunaan Thread Pool jauh lebih aman dan efisien daripada melakukan `thread::spawn` secara langsung untuk setiap koneksi:
+* **Mencegah DOS (Denial of Service)**: Dengan membatasi jumlah thread (misal: 4), server tidak akan tumbang atau kehabisan memori jika tiba-tiba menerima ribuan request sekaligus.
+* **Efisiensi**: Menghilangkan biaya waktu (*overhead*) untuk membuat dan menghancurkan thread berulang kali.
+
+### 3. Hasil Pengujian
+Setelah implementasi ini, server mampu menangani rute `/sleep` (yang memakan waktu 10 detik) tanpa mengganggu pengguna lain yang mengakses halaman utama (`/`). Hal ini membuktikan bahwa server sekarang memiliki kemampuan **Concurrency** yang baik.
